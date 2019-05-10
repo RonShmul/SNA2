@@ -69,24 +69,60 @@ def correlation(between, closeness, eigen, degree):
     degree_list = list(degree.keys())
     return list(set(between_list) & set(closeness_list) & set(eigen_list) & set(degree_list))
 
-
+#Q5 - communities
 def find_communities(tn):
     communities_generator = community.girvan_newman(tn)
-    two_communities = next(communities_generator)
-    three_communities = next(communities_generator)
-    four_communities = next(communities_generator)
-    print(sorted(map(sorted, two_communities)))
-    print(sorted(map(sorted, three_communities)))
-    print(sorted(map(sorted, four_communities)))
-    #statistics
-    
+    first_iter_comm = tuple(sorted(c) for c in next(communities_generator))
+    second_iter_comm = tuple(sorted(c) for c in next(communities_generator))
+    third_iter_comm = tuple(sorted(c) for c in next(communities_generator))
+    comm_dict1 = dict(enumerate(first_iter_comm))
+    comm_dict2 = dict(enumerate(second_iter_comm))
+    comm_dict3 = dict(enumerate(third_iter_comm))
+    print(comm_dict1)
+    print(comm_dict2)
+    print(comm_dict3)
+    #statistics todo: look for statistics, maybe in the presentation
+    # two_communities = next(communities_generator)
+    # three_communities = next(communities_generator)
+    # four_communities = next(communities_generator)
+    # nodes = tn.number_of_nodes()
+    # first_comm_2 = len(two_communities[0])/nodes
+    # second_comm_2 = len(two_communities[1])/nodes
+    # first_comm_3 = len(three_communities[0]) / nodes
+    # second_comm_3 = len(three_communities[1]) / nodes
+    # third_comm_3 = len(three_communities[2]) / nodes
+    # first_comm_4 = len(four_communities[0]) / nodes
+    # second_comm_4 = len(four_communities[1]) / nodes
+    # third_comm_4 = len(four_communities[2]) / nodes
+    # fourth_comm_4= len(four_communities[3]) / nodes
+
+# Q6 - graph with communities and centrality measure
+def centrality_communities_graph():
+    pass
+
+
+# Q7 - link prediction
+def jaccard_lp(tn):
+    pred_jc = nx.jaccard_coefficient(tn)
+    pred_dict = {}
+    for u, v, p in pred_jc:
+        pred_dict[(u, v)] = p
+    return sorted(pred_dict.items(), key=lambda x:x[1], reverse=True)[:10]
+
+def preferential_lp(tn):
+    pred_pa = nx.preferential_attachment(tn)
+    pred_dict = {}
+    for u, v, p in pred_pa:
+        pred_dict[(u, v)] = p
+    return sorted(pred_dict.items(), key=lambda x: x[1], reverse=True)[:10]
+
 
 m_tn = load_network()
 nx.draw(m_tn, with_labels=True)
 tn_new = nx.Graph(m_tn)
-print(nx.info(tn_new))
+# print(nx.info(tn_new))
 tn_clean = preprocess(tn_new)
-print(nx.info(tn_clean))
+# print(nx.info(tn_clean))
 nx.draw(tn_clean, with_labels=True)
 nx.draw_spring(tn_clean, with_labels=True)
 nx.draw_circular(tn_clean, with_labels=True)
@@ -96,5 +132,9 @@ between, closeness, eigen, degree = top_10(degree, eigen, closeness, between)
 cor = correlation(between, closeness, eigen, degree)
 print(cor)
 find_communities(tn_clean)
+jc = jaccard_lp(tn_clean)
+pa = preferential_lp(tn_clean)
+#print(jc)
+#print(pa)
 # print(tn.degree('Jon'))
 print('end')
