@@ -2,13 +2,15 @@ import pandas as pd
 import networkx as nx
 import numpy as np
 from networkx.algorithms import community
+import matplotlib.pyplot as plt
 
 # read from csv to graph
 def load_network():
     tn_edges = pd.read_csv('thrones-network.csv')
     tn_temp = nx.from_pandas_edgelist(tn_edges, source='Node A', target='Node B', edge_attr='Weight')
     tn = nx.to_undirected(tn_temp)
-    return tn
+    tn_new = nx.Graph(tn)
+    return tn_new
 
 # preprocess for the graph
 def preprocess(tn):  # Q1
@@ -62,51 +64,47 @@ def correlation(between, closeness, eigen, degree):
     closeness_list = list(closeness.keys())
     eigen_list = list(eigen.keys())
     degree_list = list(degree.keys())
-    print(between_list)
-    print(closeness_list)
-    print(eigen_list)
-    print(degree_list)
-    print(list(set(between_list) & set(closeness_list) & set(eigen_list) & set(degree_list)))
-    print(set(list(set(between_list) | set(closeness_list) | set(eigen_list) | set(degree_list))))
-    print(list(set(between_list) | set(closeness_list) | set(eigen_list) | set(degree_list)))
+    print('correlation between centrality measures: ',list(set(between_list) & set(closeness_list) & set(eigen_list) & set(degree_list)))
 
 #Q5 - communities
-def find_communities(tn): # todo: graphic visualization
+def find_communities(tn):
     communities_generator = community.girvan_newman(tn)
-    for i in range(0,3):
-        comm = tuple(sorted(c) for c in next(communities_generator))
-        comm_dict = dict(enumerate(comm))
+    for i in range(0,2):
+        com = tuple(sorted(c) for c in next(communities_generator))
+        comm_dict = dict(enumerate(com))
         final = dict()
         for key in comm_dict:
             for item in comm_dict[key]:
                 final[item] = key
-        inverse_df = pd.DataFrame.from_dict(final, orient='index')
-        print(inverse_df)
-    # third_iter_comm = tuple(sorted(c) for c in next(communities_generator))
-    # comm_dict2 = dict(enumerate(second_iter_comm))
-    # comm_dict3 = dict(enumerate(third_iter_comm))
-    # comm_df1 = pd.DataFrame.from_dict(comm_dict1, orient='index')
-    # comm_df2 = pd.DataFrame.from_dict(comm_dict2, orient='index')
-    # comm_df3 = pd.DataFrame.from_dict(comm_dict3, orient='index')
-    #statistics todo: look for statistics, maybe in the presentation
-    # two_communities = next(communities_generator)
-    # three_communities = next(communities_generator)
-    # four_communities = next(communities_generator)
+        final_df = pd.DataFrame.from_dict(final, orient='index')
+        print('Partition '+str(i), final_df)
+    com = tuple(sorted(c) for c in next(communities_generator))
+    comm_dict = dict(enumerate(com))
+    partition = dict()
+    for key in comm_dict:
+        for item in comm_dict[key]:
+            partition[item] = key
+    final_df = pd.DataFrame.from_dict(partition, orient='index')
+    print('Partition ' + str(2), final_df)
+    return com
+    #statistics todo: statistics
     # nodes = tn.number_of_nodes()
     # first_comm_2 = len(two_communities[0])/nodes
     # second_comm_2 = len(two_communities[1])/nodes
-    # first_comm_3 = len(three_communities[0]) / nodes
-    # second_comm_3 = len(three_communities[1]) / nodes
-    # third_comm_3 = len(three_communities[2]) / nodes
-    # first_comm_4 = len(four_communities[0]) / nodes
-    # second_comm_4 = len(four_communities[1]) / nodes
-    # third_comm_4 = len(four_communities[2]) / nodes
-    # fourth_comm_4= len(four_communities[3]) / nodes
 
 # Q6 - graph with communities and centrality measure
-def centrality_communities_graph():
-    pass
-
+def centrality_communities_graph(tn, partition):
+    d = nx.degree_centrality(tn)
+    pos = nx.spring_layout(tn)
+    colors = ['#c20078', '#8e82fe', '#feb308', '#02c14d']
+    for i in range(len(partition)):
+        sub = tn.subgraph(partition[i])
+        deg_size = [(d[node] * 1500) for node in sub.node]
+        #nx.draw_networkx(sub, node_color=colors[i], with_labels=True, pos=pos, node_size=deg_size)
+        nx.draw_networkx_nodes(sub, pos, node_size=deg_size, node_color=colors[i])
+        nx.draw_networkx_edges(sub, pos, alpha=0.3)
+        nx.draw_networkx_labels(sub, pos, font_size=7, font_color='black')
+    plt.show()
 
 # Q7 - link prediction
 def jaccard_lp(tn):
@@ -114,34 +112,27 @@ def jaccard_lp(tn):
     pred_dict = {}
     for u, v, p in pred_jc:
         pred_dict[(u, v)] = p
-    return sorted(pred_dict.items(), key=lambda x:x[1], reverse=True)[:10]
+    print(sorted(pred_dict.items(), key=lambda x:x[1], reverse=True)[:10])
 
 def preferential_lp(tn):
     pred_pa = nx.preferential_attachment(tn)
     pred_dict = {}
     for u, v, p in pred_pa:
         pred_dict[(u, v)] = p
-    return sorted(pred_dict.items(), key=lambda x: x[1], reverse=True)[:10]
+    print(sorted(pred_dict.items(), key=lambda x: x[1], reverse=True)[:10])
 
 
 m_tn = load_network()
-nx.draw(m_tn, with_labels=True)
-tn_new = nx.Graph(m_tn)
+#nx.draw(m_tn, with_labels=True)
 # print(nx.info(tn_new))
-tn_clean = preprocess(tn_new)
+tn_clean = preprocess(m_tn)
 # print(nx.info(tn_clean))
-nx.draw(tn_clean, with_labels=True)
-nx.draw_spring(tn_clean, with_labels=True)
-nx.draw_circular(tn_clean, with_labels=True)
-graph_attr(tn_clean)
+#nx.draw_spring(tn_clean, with_labels=True)
+#graph_attr(tn_clean)
 degree, eigen, closeness, between = centrality(tn_clean)
 between, closeness, eigen, degree = top_10(degree, eigen, closeness, between)
-cor = correlation(between, closeness, eigen, degree)
-print(cor)
-find_communities(tn_clean)
-jc = jaccard_lp(tn_clean)
-pa = preferential_lp(tn_clean)
-#print(jc)
-#print(pa)
-# print(tn.degree('Jon'))
-print('end')
+correlation(between, closeness, eigen, degree)
+#part = find_communities(tn_clean)
+#centrality_communities_graph(tn_clean, part)
+jaccard_lp(tn_clean)
+preferential_lp(tn_clean)
