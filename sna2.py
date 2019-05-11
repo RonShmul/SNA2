@@ -3,7 +3,6 @@ import networkx as nx
 import numpy as np
 from networkx.algorithms import community
 
-
 # read from csv to graph
 def load_network():
     tn_edges = pd.read_csv('thrones-network.csv')
@@ -11,10 +10,9 @@ def load_network():
     tn = nx.to_undirected(tn_temp)
     return tn
 
-
 # preprocess for the graph
 def preprocess(tn):  # Q1
-    remove = [edge for edge in tn.edges().items() if edge[1]['Weight'] < 7]  # todo: only nodes with degree > z
+    remove = [edge for edge in tn.edges().items() if edge[1]['Weight'] < 7]
     remove_list = [remove[i][0] for i in range(len(remove))]
     tn.remove_edges_from(remove_list)
     isolated = list(nx.isolates(tn)) # isolate and remove the unconnected nodes
@@ -28,11 +26,12 @@ def graph_attr(tn):
     density = nx.density(tn)
     diameter = nx.diameter(tn)
     avg_path_length = nx.average_shortest_path_length(tn)
-    print('cluster for all: ', clustering_coefficient)
-    print('average cluster: ', avg_cluster)
+    print('clustering for all: ', clustering_coefficient)
+    print(len(clustering_coefficient))
+    print('average clustering: ', avg_cluster)
     print('density: ', density)
     print('diameter: ', diameter)
-    print('avg_path_length: ', avg_path_length)
+    print('avg path length: ', avg_path_length)
 
 # Q3 - centrality and top 10 characters
 def centrality(tn):
@@ -40,10 +39,6 @@ def centrality(tn):
     eigen_cen = nx.eigenvector_centrality(tn)
     closeness_cen = nx.closeness_centrality(tn)
     between_cen = nx.betweenness_centrality(tn)
-    print('degree: ', degree_cen)
-    print('eigen: ', eigen_cen)
-    print('closeness: ', closeness_cen)
-    print('betweeness: ', between_cen)
     return degree_cen, eigen_cen, closeness_cen, between_cen
 
 def top_10(degree, eigen, closeness, between):
@@ -51,14 +46,14 @@ def top_10(degree, eigen, closeness, between):
     top_10_eigen = dict(sorted(eigen.items(), key=lambda x: x[1], reverse=True)[:10])
     top_10_closeness = dict(sorted(closeness.items(), key=lambda x: x[1], reverse=True)[:10])
     top_10_between = dict(sorted(between.items(), key=lambda x: x[1], reverse=True)[:10])
-    # print('top ten degree centrality\n')
-    print(top_10_degree)
-    # print('top ten eigen centrality\n')
-    print(top_10_eigen)
-    # print('top ten closeness centrality\n')
-    print(top_10_closeness)
-    # print('top ten between centrality\n')
-    print(top_10_between)
+    df_deg = pd.DataFrame.from_dict(top_10_degree, orient='index')
+    df_eigen = pd.DataFrame.from_dict(top_10_eigen, orient='index')
+    df_close = pd.DataFrame.from_dict(top_10_closeness, orient='index')
+    df_between = pd.DataFrame.from_dict(top_10_between, orient='index')
+    print('top ten degree centrality', df_deg)
+    print('top ten eigen centrality', df_eigen)
+    print('top ten closeness centrality', df_close)
+    print('top ten between centrality', df_between)
     return top_10_between, top_10_closeness, top_10_eigen, top_10_degree
 
 #Q4 - find correlation between centrality measures, find exceptional
@@ -67,20 +62,32 @@ def correlation(between, closeness, eigen, degree):
     closeness_list = list(closeness.keys())
     eigen_list = list(eigen.keys())
     degree_list = list(degree.keys())
-    return list(set(between_list) & set(closeness_list) & set(eigen_list) & set(degree_list))
+    print(between_list)
+    print(closeness_list)
+    print(eigen_list)
+    print(degree_list)
+    print(list(set(between_list) & set(closeness_list) & set(eigen_list) & set(degree_list)))
+    print(set(list(set(between_list) | set(closeness_list) | set(eigen_list) | set(degree_list))))
+    print(list(set(between_list) | set(closeness_list) | set(eigen_list) | set(degree_list)))
 
 #Q5 - communities
-def find_communities(tn):
+def find_communities(tn): # todo: graphic visualization
     communities_generator = community.girvan_newman(tn)
-    first_iter_comm = tuple(sorted(c) for c in next(communities_generator))
-    second_iter_comm = tuple(sorted(c) for c in next(communities_generator))
-    third_iter_comm = tuple(sorted(c) for c in next(communities_generator))
-    comm_dict1 = dict(enumerate(first_iter_comm))
-    comm_dict2 = dict(enumerate(second_iter_comm))
-    comm_dict3 = dict(enumerate(third_iter_comm))
-    print(comm_dict1)
-    print(comm_dict2)
-    print(comm_dict3)
+    for i in range(0,3):
+        comm = tuple(sorted(c) for c in next(communities_generator))
+        comm_dict = dict(enumerate(comm))
+        final = dict()
+        for key in comm_dict:
+            for item in comm_dict[key]:
+                final[item] = key
+        inverse_df = pd.DataFrame.from_dict(final, orient='index')
+        print(inverse_df)
+    # third_iter_comm = tuple(sorted(c) for c in next(communities_generator))
+    # comm_dict2 = dict(enumerate(second_iter_comm))
+    # comm_dict3 = dict(enumerate(third_iter_comm))
+    # comm_df1 = pd.DataFrame.from_dict(comm_dict1, orient='index')
+    # comm_df2 = pd.DataFrame.from_dict(comm_dict2, orient='index')
+    # comm_df3 = pd.DataFrame.from_dict(comm_dict3, orient='index')
     #statistics todo: look for statistics, maybe in the presentation
     # two_communities = next(communities_generator)
     # three_communities = next(communities_generator)
