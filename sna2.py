@@ -29,7 +29,6 @@ def graph_attr(tn):
     diameter = nx.diameter(tn)
     avg_path_length = nx.average_shortest_path_length(tn)
     print('clustering for all: ', clustering_coefficient)
-    print(len(clustering_coefficient))
     print('average clustering: ', avg_cluster)
     print('density: ', density)
     print('diameter: ', diameter)
@@ -80,6 +79,7 @@ def find_communities(tn):
         print('Partition '+str(i), final_df)
     com = tuple(sorted(c) for c in next(communities_generator))
     comm_dict = dict(enumerate(com))
+    print(comm_dict)
     partition = dict()
     for key in comm_dict:
         for item in comm_dict[key]:
@@ -87,10 +87,19 @@ def find_communities(tn):
     final_df = pd.DataFrame.from_dict(partition, orient='index')
     print('Partition ' + str(2), final_df)
     return com
-    #statistics todo: statistics
-    # nodes = tn.number_of_nodes()
-    # first_comm_2 = len(two_communities[0])/nodes
-    # second_comm_2 = len(two_communities[1])/nodes
+
+def statistics(tn, com):
+    nodes = tn.number_of_nodes()
+    comm_dict = dict(enumerate(com))
+    for key, value in comm_dict.items():
+        sub = tn.subgraph(com[key])
+        deg = nx.degree_centrality(sub)
+        first_character = dict(sorted(deg.items(), key=lambda x: x[1], reverse=True)[:1])
+        comm = len(comm_dict[key]) / nodes
+        print('precent of graph of community #'+str(key), comm)
+        print('The head of community by degree: ', first_character)
+        graph_attr(sub)
+
 
 # Q6 - graph with communities and centrality measure
 def centrality_communities_graph(tn, partition):
@@ -129,10 +138,11 @@ tn_clean = preprocess(m_tn)
 # print(nx.info(tn_clean))
 #nx.draw_spring(tn_clean, with_labels=True)
 #graph_attr(tn_clean)
-degree, eigen, closeness, between = centrality(tn_clean)
-between, closeness, eigen, degree = top_10(degree, eigen, closeness, between)
-correlation(between, closeness, eigen, degree)
-#part = find_communities(tn_clean)
+#degree, eigen, closeness, between = centrality(tn_clean)
+#between, closeness, eigen, degree = top_10(degree, eigen, closeness, between)
+#correlation(between, closeness, eigen, degree)
+part = find_communities(tn_clean)
+statistics(tn_clean, part)
 #centrality_communities_graph(tn_clean, part)
-jaccard_lp(tn_clean)
-preferential_lp(tn_clean)
+#jaccard_lp(tn_clean)
+#preferential_lp(tn_clean)
